@@ -11,6 +11,9 @@ The goals / steps of this project are the following:
 
 See code and more example of the pipeline in [the notebook](./VehicleDetection.ipynb). Here's a [link to the test video result](./test_video_output.mp4).
 
+## Data
+The labeled images for training and testing in this project come from [vehicles.zip](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/vehicles.zip) and [non-vehicles.zip](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/non-vehicles.zip).
+
 ## Feature Exaction
 To differentiate between car images and non-car images, 4 types of features are extracted from each training image, **Red Colors**, **Histogram of Oriented Gradients (HOG)**, **Binned Colors**, **Histogram of Colors**.
 
@@ -32,11 +35,38 @@ LUV was also considered due to its accuracy is very close to YUV. However in rea
 ### Features
 #### Feature 1 - Red Colors
 
+Unlike other features, this feature for each training image is extracted from RGB color space instead of YUV color space. The idea is to identify whether an image contains a car or not, based on the level and position of the red colors. This is based on the fact that almost every car has red braking lights at the back.
+
+```python
+def get_red_features(img, size):    
+    img = cv2.resize(img, size)
+
+    img_r = img[:,:,0]
+    img_g = img[:,:,1]
+    img_b = img[:,:,2]
+
+    img_bg = cv2.add(img_b, img_g)
+
+    mask = (img_r > img_bg).astype(np.uint8) * 255
+
+    img_masked = cv2.bitwise_and(img, img, mask=mask)
+    return img_masked.ravel()
+
+```
+
+In the code it also resizes the image before extracting red colors, in order to eliminate any small red dots due to light distortion for example. At the end it flattens the masked image into one row before returning.
+
+In the car example below, the two red braking lights are accurately extracted. There is one extra dark red point in the low-right, which is fine since it's not common to all car images.
+
 ![](./example_images/car-red-features.png)
+
+In the non-car example below, no red color is found as expected.
 
 ![](./example_images/non-car-red-features.png)
 
 #### Histogram of Oriented Gradients (HOG)
+
+After scanning thru all labelled images, there are ~10% of the car images come with no red colors, and ~10% of the non-car images come with red colors. For these images, we will have to use HOG information which is less color relevant. 
 
 ![](./example_images/car-hog-features.png)
 
