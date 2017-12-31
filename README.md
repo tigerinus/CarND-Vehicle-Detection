@@ -94,17 +94,23 @@ In the non-car example below, it is hard to see rectangle in any of the HOG imag
 
 ![](./example_images/non-car-hog-features.png)
 
-#### Binned Colors
+#### Binned Colors and Histogram of Colors
+
+There are cases where an image has red colors and shape found in HOG is kind of rectangle, but it could be a stop sign. To differentiate these images from real car images, we want the classifiers to look at binned colors and histogram of the image, to check colors in different areas and amounts.
+
+Here are the examples of binned colors for the car image and the non-car image.
 
 ![](./example_images/car-bin-features.png)
 
 ![](./example_images/non-car-bin-features.png)
 
-#### Histogram of Colors
+Here are the examples of color histograms for the car image and the non-car image.
 
 ![](./example_images/car-hist-features.png)
 
 ![](./example_images/non-car-hist-features.png)
+
+The differences in these features between a car image and a non-car image can be very small. The detection will mostly rely on the red color feature and HOG feature described previously. In video testing, adding these two features actually increases the accuracy a little, so they are kept.
 
 ### Feature Normalization
 
