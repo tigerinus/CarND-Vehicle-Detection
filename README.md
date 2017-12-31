@@ -51,7 +51,6 @@ def get_red_features(img, size):
 
     img_masked = cv2.bitwise_and(img, img, mask=mask)
     return img_masked.ravel()
-
 ```
 
 In the code it also resizes the image before extracting red colors, in order to eliminate any small red dots due to light distortion for example. At the end it flattens the masked image into one row before returning.
@@ -66,9 +65,32 @@ In the non-car example below, no red color is found as expected.
 
 #### Histogram of Oriented Gradients (HOG)
 
-After scanning thru all labelled images, there are ~10% of the car images come with no red colors, and ~10% of the non-car images come with red colors. For these images, we will have to use HOG information which is less color relevant. 
+After scanning thru all labelled images, it is found that there are about 10% of car images come with no red colors, and about 10% of non-car images come with red colors. To avoid misidentifying these images, we will have to use [HOG](https://www.learnopencv.com/histogram-of-oriented-gradients) information which is less color relevant. 
+
+For this project [```hog()``` function](http://scikit-image.org/docs/dev/auto_examples/features_detection/plot_hog.html) provided by *scikit-image* is used.
+
+```python
+def get_hog_features(img, orient, pix_per_cell, cell_per_block, vis, feature_vec, channel):
+    return hog(img[:,:,channel], orientations=orient, 
+               pixels_per_cell=(pix_per_cell, pix_per_cell),
+               cells_per_block=(cell_per_block, cell_per_block), 
+               transform_sqrt=False, 
+               visualise=vis, feature_vector=feature_vec, block_norm='L2-Hys')
+```
+where
+```python
+orient = 11
+pix_per_cell = 16
+cell_per_block = 2
+```
+
+Originally ```orient``` was ```9``` and ```pix_per_cell``` was ```8```. They were increased to current values to speed up the pipeline for the video. 
+
+In the car example below, we can recognize that the surrounding vectors in the HOG image for channel 0 (upper right image), i.e. (Y) luma channel, roughly forms a closed rectangle.
 
 ![](./example_images/car-hog-features.png)
+
+In the non-car example below, it is hard to see rectangle in any of the HOG images.
 
 ![](./example_images/non-car-hog-features.png)
 
