@@ -157,9 +157,9 @@ There are few strategies for slide window searching, in order to increase accura
         ctrans_tosearch = ctrans_tosearch[y_sub_start:y_sub_end, :]
     ```
 
-* *Heatmap* - Search boxes where a car is believed to exist in each, by classifiers, can overlap.  Value for the same pixel covered by the search boxes adds up. When value is high, i.e. search boxes overlap, the chance that is actually a car is high, and vice versa. Occasionally an area in the image can be misidentified as a car. However its appearance on the heatmap can be light and below the threshold, thus will be ignored.
+* *Heatmap* - Search boxes where a car is believed to exist in each, by classifiers, can overlap.  Value for the same pixel covered by the search boxes adds up. When value is high, i.e. search boxes overlap, the chance that is actually a car is high, and vice versa. Occasionally an area in the image can be misidentified as a car. However its appearance on the heatmap can be light and below the threshold `12`, thus will be ignored.
 
-* *Use of Previous Results* - We should take advantage of previous frames when detecting cars on a video clip. In the code it keeps records of search boxes that contain a car from last `num_history = 6` frames. When constructing heatmap, both current boxes and previous boxes are used. For example, in the image below, no car in the current frame was detected by any classifier for some reason. Fortunately it has search results from previous frames, represented as dark yellow boxes. Otherwise the heatmap will be blank.
+* *Use of Previous Results* - We should take advantage of previous frames when detecting cars on a video clip. In the code it keeps records of search boxes that contain a car from last `num_history = 5` frames. When constructing heatmap, both current boxes and previous boxes are used. For example, in the image below, no car in the current frame was detected by any classifier for some reason. Fortunately it has search results from previous frames, represented as dark yellow boxes. Otherwise the heatmap will be blank.
 
     ![](/example_images/previous_boxes.png)
 
