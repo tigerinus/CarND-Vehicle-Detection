@@ -133,6 +133,9 @@ However the combined feature values must be normalized to the same scale, to avo
 In the examples above, we see that the biggest differentiator between car and non-car images is red color features coming from braking lights. HOG makes a difference too. The remaining of the features do not differ too much, but still contributes per the real video testing.
 
 ## Classifiers
+
+To decide which classifier to use, testing for each classifier was performed to obtained comparable accuracy. The training images are shuffled and splitted into 80% images for training and 20% for testing. Each test was performed 3 times to average the accuracy. 
+
 | Classifier | Training Time (sec) | Testing Time (sec) | Accuracy (%) | Considered | Comments |
 |-----------:|:--------------:|:--------------:|----------|:---:|----|
 | LinearSVC  | 10.62 | 0.05 | 99.90138067061144 | Y | |
@@ -146,6 +149,8 @@ In the examples above, we see that the biggest differentiator between car and no
 | AdaBoostClassifier | 474.73 | 1.04 | 100.00 | N | Too good to be true. Very expensive to train. |
 
 The [classifiers](./classifiers) folder has all the tests for each classifier listed above.
+
+At the end, instead of choosing an individual classifier, 3 classifiers (listed as considered in the above table) were combined. A car is only identified if every classifier recognize it.
 
 ## Detection
 
