@@ -98,25 +98,39 @@ In the non-car example below, it is hard to see rectangle in any of the HOG imag
 
 There are cases where an image has red colors and shape found in HOG is kind of rectangle, but it could be a stop sign. To differentiate these images from real car images, we want the classifiers to look at binned colors and histogram of the image, to check colors in different areas and amounts.
 
+```python
+def bin_spatial(img, size, channel):
+    return cv2.resize(img[:,:,channel], size).ravel()
+```
+
 Here are the examples of binned colors for the car image and the non-car image.
 
 ![](./example_images/car-bin-features.png)
-
 ![](./example_images/non-car-bin-features.png)
+
+```python
+def color_hist(img, nbins, bins_range, channel):    
+    channel_hist = np.histogram(img[:,:,channel], bins=nbins, range=bins_range)
+    return channel_hist[0]
+```
 
 Here are the examples of color histograms for the car image and the non-car image.
 
 ![](./example_images/car-hist-features.png)
-
 ![](./example_images/non-car-hist-features.png)
 
 The differences in these features between a car image and a non-car image can be very small. The detection will mostly rely on the red color feature and HOG feature described previously. In video testing, adding these two features actually increases the accuracy a little, so they are kept.
 
 ### Feature Normalization
 
-![](./example_images/car-normalized-features.png)
+After obtaining all features for each image, the features are combined in the same order as listed above. That is, [red colors + HOG + binned colors + histogram of colors].
 
+However the combined feature values must be normalized to the same scale, to avoid some information being dominant. 
+
+![](./example_images/car-normalized-features.png)
 ![](./example_images/non-car-normalized-features.png)
+
+In the examples above, we see that the biggest differentiator between car and non-car images is red color features coming from braking lights. HOG makes a difference too. The remaining of the features do not differ too much, but still contributes per the real video testing.
 
 ## Classifiers
 | Classifier | Training Time (sec) | Testing Time (sec) | Accuracy (%) | Considered | Comments |
@@ -130,6 +144,8 @@ The differences in these features between a car image and a non-car image can be
 | GaussianNB |  2.34 | 0.77 | 99.11242603550295 | N | Misidentified few false positives in real test for some reason, although test accuracy is not bad. |
 | QuadraticDiscriminantAnalysis | 172.19 | 5.79 | 51.77514792899408 | N | Low accuracy. Too expensive to train and test. |
 | AdaBoostClassifier | 474.73 | 1.04 | 100.00 | N | Too good to be true. Very expensive to train. |
+
+The [classifiers](./classifiers) folder has all the tests for each classifier listed above.
 
 ## Detection
 
