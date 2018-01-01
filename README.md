@@ -9,7 +9,7 @@ The goals / steps of this project are the following:
 * Run your pipeline on a video stream (start with the test_video.mp4 and later implement on full project_video.mp4) and create a heat map of recurring detections frame by frame to reject outliers and follow detected vehicles.
 * Estimate a bounding box for vehicles detected.
 
-See code and more example of the pipeline in [the notebook](./VehicleDetection.ipynb). Here's a [link to the test video result](./test_video_output.mp4).
+See code and more example of the pipeline in [the notebook](./VehicleDetection.ipynb).
 
 ## Data
 The labeled images for training and testing in this project come from [vehicles.zip](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/vehicles.zip) and [non-vehicles.zip](https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/non-vehicles.zip).
@@ -67,7 +67,7 @@ In the non-car example below, no red color is found as expected.
 
 After scanning thru all labelled images, it is found that there are about 10% of car images come with no red colors, and about 10% of non-car images come with red colors. To avoid misidentifying these images, we will have to use [HOG](https://www.learnopencv.com/histogram-of-oriented-gradients) information which is less color relevant. 
 
-For this project [```hog()``` function](http://scikit-image.org/docs/dev/auto_examples/features_detection/plot_hog.html) provided by *scikit-image* is used.
+For this project [`hog()` function](http://scikit-image.org/docs/dev/auto_examples/features_detection/plot_hog.html) provided by *scikit-image* is used.
 
 ```python
 def get_hog_features(img, orient, pix_per_cell, cell_per_block, vis, feature_vec, channel):
@@ -84,7 +84,7 @@ pix_per_cell = 16
 cell_per_block = 2
 ```
 
-Originally ```orient``` was ```9``` and ```pix_per_cell``` was ```8```. They were increased to current values to speed up the pipeline for the video. 
+Originally `orient` was `9` and `pix_per_cell` was `8`. They were increased to current values to speed up the pipeline for the video. 
 
 In the car example below, we can recognize that the surrounding vectors in the HOG image for channel 0 (upper right image), i.e. (Y) luma channel, roughly forms a closed rectangle.
 
@@ -138,28 +138,40 @@ To decide which classifier to use, testing for each classifier was performed to 
 
 | Classifier | Training Time (sec) | Testing Time (sec) | Accuracy (%) | Considered | Comments |
 |-----------:|:--------------:|:--------------:|----------|:---:|----|
-| LinearSVC  | 10.62 | 0.05 | 99.90138067061144 | Y | |
-| DecisionTreeClassifier | 12.54 | 0.07 | 99.70414201183432 | Y | |
-| SGDClassifier | 0.73 | 0.03 | 99.90138067061144 | Y | |
-| SVC | 50.42 | 12.68  | 99.95069033530573 | N | Accuracy is great, but expensive to train and test.|
-| RandomForestClassifier |  2.45 | 0.16 | 99.65483234714004 | N | Could be considered, but does not add too much to the over all accuracy, since DecisionTreeClassifier is already used. |
-| MLPClassifier | 40.85 | 0.62 | 99.90138067061144 | N | Misidentified few positive falses in real test for some reason, although test accuracy is high. Could be because of not enough training data. |
-| GaussianNB |  2.34 | 0.77 | 99.11242603550295 | N | Misidentified few false positives in real test for some reason, although test accuracy is not bad. |
-| QuadraticDiscriminantAnalysis | 172.19 | 5.79 | 51.77514792899408 | N | Low accuracy. Too expensive to train and test. |
-| AdaBoostClassifier | 474.73 | 1.04 | 100.00 | N | Too good to be true. Very expensive to train. |
+| LinearSVC  | 10.62 | 0.05 | 99.901 | Y | |
+| DecisionTreeClassifier | 12.54 | 0.07 | 99.704 | Y | |
+| SGDClassifier | 0.73 | 0.03 | 99.901 | Y | |
+| SVC | 50.42 | 12.68  | 99.950 | N | Accuracy is great, but expensive to train and test.|
+| RandomForestClassifier |  2.45 | 0.16 | 99.654 | N | Could be considered, but does not add too much to the over all accuracy, since DecisionTreeClassifier is already used. |
+| MLPClassifier | 40.85 | 0.62 | 99.901 | N | Misidentified few positive falses in real test for some reason, although test accuracy is high. Could be because of not enough training data. |
+| GaussianNB |  2.34 | 0.77 | 99.112 | N | Misidentified few false positives in real test for some reason, although test accuracy is not bad. |
+| QuadraticDiscriminantAnalysis | 172.19 | 5.79 | 51.775 | N | Low accuracy. Too expensive to train and test. |
+| AdaBoostClassifier | 474.73 | 1.04 | 100.000 | N | Too good to be true. Very expensive to train. |
 
 The [classifiers](./classifiers) folder has all the tests for each classifier listed above.
 
 At the end, instead of choosing an individual classifier, 3 classifiers (listed as considered in the above table) were combined. A car is only identified if every classifier recognize it.
 
-## Detection
+## Sliding Window Search
 
-### Search Area
+There are few strategies for slide window searching, in order to increase accuracy of car detection as well as reducing false positives.
 
-### Sliding Window Search
+* *Search Area* - Althought flying car program was recently introduced on Udacity, it is rare to see car flying in the sky as of now. Even if there is, it would not be a concern for self-driving car on the ground. Therefore, the search starts at the middle of the image and scans thru the second half of the image at the bottom.
 
-### Classifier Vote
+    ![](/example_images/search1.png)
 
-### Heatmap
+* *Perspective Search* - Objects farther are going to appear smaller and vice versa. Neither house-size vehicle or desk-size vehicle normally exists on our daily commute. Thus the area to search is 'zoomed' based on the `scale` value. The horizontal light yellow lines in the example image above shows how perspective search is done.
 
-### Use of Previous Results
+    ```python
+        y_sub_start = 64 - int(scale * 20)
+        y_sub_end = int(scale * 100)
+        ctrans_tosearch = ctrans_tosearch[y_sub_start:y_sub_end, :]
+    ```
+
+* *Heatmap* - Search boxes where a car is believed to exist in each, by classifiers, can overlap.  Value for the same pixel covered by the search boxes adds up. When value is high, i.e. search boxes overlap, the chance that is actually a car is high, and vice versa. Occasionally an area in the image can be misidentified as a car. However its appearance on the heatmap can be light and below the threshold, thus will be ignored.
+
+* *Use of Previous Results* - We should take advantage of previous frames when detecting cars on a video clip. In the code it keeps records of search boxes that contain a car from last `num_history = 6` frames. When constructing heatmap, both current boxes and previous boxes are used. For example, in the image below, no car in the current frame was detected by any classifier for some reason. Fortunately it has search results from previous frames, represented as dark yellow boxes. Otherwise the heatmap will be blank.
+
+    ![](/example_images/previous_boxes.png)
+
+Here's a [link to the project video result](./project_video_output.mp4).
